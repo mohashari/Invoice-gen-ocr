@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String    @map("password_hash")
+  role         Role      @default(ACCOUNTANT)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  invoices     Invoice[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  ACCOUNTANT
+  VIEWER
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  userId        String        @map("user_id")
+  user          User          @relation(fields: [userId], references: [id])
+  status        InvoiceStatus @default(PENDING)
+  rawFileUrl    String?       @map("raw_file_url")
+  pdfUrl        String?       @map("pdf_url")
+  ocrConfidence Decimal?      @map("ocr_confidence") @db.Decimal(5, 2)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  invoiceData   InvoiceData?
+  lineItems     LineItem[]
+  ocrJob        OcrJob?
+
+  @@map("invoices")
+}
+
+enum InvoiceStatus {
+  PENDING
+  PROCESSING
+  EXTRACTED
+  CONFIRMED
+  ERROR
+}
+
+model InvoiceData {
+  id             String   @id @default(uuid())
+  invoiceId      String   @unique @map("invoice_id")
+  invoice        Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  invoiceNumber  String?  @map("invoice_number")
+  vendorName     String?  @map("vendor_name")
+  vendorAddress  String?  @map("vendor_address")
+  issueDate      DateTime? @map("issue_date")
+  dueDate        DateTime? @map("due_date")
+  currency       String   @default("IDR")
+  subtotal       Decimal? @db.Decimal(15, 2)
+  taxAmount      Decimal? @map("tax_amount") @db.Decimal(15, 2)
+  totalAmount    Decimal? @map("total_amount") @db.Decimal(15, 2)
+  paymentTerms   String?  @map("payment_terms")
+  notes          String?
+  rawOcrText     String?  @map("raw_ocr_text")
+  isCorrected    Boolean  @default(false) @map("is_corrected")
+
+  @@map("invoice_data")
+}
+
+model LineItem {
+  id          String   @id @default(uuid())
+  invoiceId   String   @map("invoice_id")
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String?
+  quantity    Decimal? @db.Decimal(10, 3)
+  unitPrice   Decimal? @map("unit_price") @db.Decimal(15, 2)
+  total       Decimal? @db.Decimal(15, 2)
+  sortOrder   Int      @default(0) @map("sort_order")
+
+  @@map("invoice_line_items")
+}
+
+model OcrJob {
+  id          String    @id @default(uuid())
+  invoiceId   String    @unique @map("invoice_id")
+  invoice     Invoice   @relation(fields: [invoiceId], references: [id])
+  queueJobId  String?   @map("queue_job_id")
+  status      JobStatus @default(QUEUED)
+  errorMsg    String?   @map("error_msg")
+  startedAt   DateTime? @map("started_at")
+  finishedAt  DateTime? @map("finished_at")
+
+  @@map("ocr_jobs")
+}
+
+enum JobStatus {
+  QUEUED
+  PROCESSING
+  DONE
+  FAILED
+}

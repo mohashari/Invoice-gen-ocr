@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: invoice-config
+  namespace: invoice
+data:
+  NODE_ENV: production
+  REDIS_HOST: redis
+  REDIS_PORT: "6379"
+  S3_REGION: us-east-1
+  S3_BUCKET_RAW: invoices-raw
+  S3_BUCKET_PROCESSED: invoices-processed
+  S3_BUCKET_PDF: invoices-pdf
+  OCR_WORKER_CALLBACK_URL: http://api-svc:3000/internal/ocr-callback
