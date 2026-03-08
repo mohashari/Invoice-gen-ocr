@@ -24,8 +24,11 @@ export async function buildApp() {
     credentials: true,
   })
   await app.register(fastifyCookie)
+  const jwtSecret = process.env.JWT_SECRET
+  if (!jwtSecret) throw new Error('JWT_SECRET environment variable is required')
+
   await app.register(fastifyJwt, {
-    secret: process.env.JWT_SECRET || 'fallback_secret_change_me',
+    secret: jwtSecret,
     cookie: { cookieName: 'refresh_token', signed: false },
   })
   await app.register(fastifyMultipart, {

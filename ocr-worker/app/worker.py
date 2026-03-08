@@ -40,7 +40,11 @@ def get_redis():
 def send_callback(payload: dict):
     try:
         with httpx.Client(timeout=30) as client:
-            resp = client.post(settings.ocr_worker_callback_url, json=payload)
+            resp = client.post(
+                settings.ocr_worker_callback_url,
+                json=payload,
+                headers={"x-internal-token": settings.internal_api_secret},
+            )
             resp.raise_for_status()
             log.info(f"Callback sent for invoice {payload['invoiceId']}: {resp.status_code}")
     except Exception as e:

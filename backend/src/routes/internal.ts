@@ -10,8 +10,15 @@ interface OcrCallbackBody {
   lineItems?: Array<Record<string, unknown>>
 }
 
+const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET
+if (!INTERNAL_SECRET) throw new Error('INTERNAL_API_SECRET environment variable is required')
+
 export async function internalRoutes(app: FastifyInstance) {
   app.post('/ocr-callback', async (req: FastifyRequest<{ Body: OcrCallbackBody }>, reply) => {
+    if (req.headers['x-internal-token'] !== INTERNAL_SECRET) {
+      return reply.code(401).send({ error: 'Unauthorized' })
+    }
+
     const { invoiceId, status, errorMsg, confidence, invoiceData, lineItems } = req.body
 
     if (!invoiceId) return reply.code(400).send({ error: 'invoiceId required' })

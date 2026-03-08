@@ -7,12 +7,18 @@ import {
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { Readable } from 'stream'
 
+const s3AccessKey = process.env.S3_ACCESS_KEY
+const s3SecretKey = process.env.S3_SECRET_KEY
+if (!s3AccessKey || !s3SecretKey) {
+  throw new Error('S3_ACCESS_KEY and S3_SECRET_KEY environment variables are required')
+}
+
 const s3 = new S3Client({
   endpoint: process.env.S3_ENDPOINT || 'http://minio:9000',
   region: process.env.S3_REGION || 'us-east-1',
   credentials: {
-    accessKeyId: process.env.S3_ACCESS_KEY || 'minioadmin',
-    secretAccessKey: process.env.S3_SECRET_KEY || 'minioadmin',
+    accessKeyId: s3AccessKey,
+    secretAccessKey: s3SecretKey,
   },
   forcePathStyle: true,
 })
